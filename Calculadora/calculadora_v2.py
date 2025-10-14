@@ -13,6 +13,7 @@ n1 = None # Variável para guardar o primeiro número das operações
 operador = None # Variável para guardar o operador atual
 resultado_mostrado = False # Variável para saber se o resultado já foi mostrado
 novo_numero = False # Variável para saber se um novo número foi digitado no visor
+nova_expressao = None # Variável que guarda a expressão atual e usada para atualizar o placeholder
 # Função para formatar número
 def formatar_numero(num):
     if float(num).is_integer():
@@ -32,6 +33,22 @@ operacoes_especiais = {
    "x²": lambda a: a**2,
    "1/x": lambda a: 1/a if a != 0 else float("nan")
 }
+
+# Função para identificar o penúltimo operador
+def penultimo_operador(nova_expressao):
+    # placeholder.update_idletasks()
+    operadores_validos = ["+", "-", "X", "÷"]
+    partes = nova_expressao.strip().split()
+    # Remove o operador pendente no final
+    if partes and partes[-1] in operadores_validos:
+        partes = partes[:-1]
+
+    # Percorre de trás para frente procurando o primeiro operador
+    for i in range(len(partes) - 1, -1, -1):
+        if partes[i] in operadores_validos:
+            return partes[i]
+    return None
+
 # Função para inserir números no visor da calculadora
 def inserir_numero(botao):
     global resultado_mostrado, novo_numero
@@ -61,7 +78,7 @@ def inserir_numero(botao):
             entrada.insert(tk.END, botao)
 # Função de configurar placeholder após apertar operador (+-X÷)
 def clicar_operador(botao):
-    global n1, operador, resultado_mostrado, novo_numero
+    global n1, operador, resultado_mostrado, novo_numero, nova_expressao
     try:
         valor_atual = float(entrada.get())
         expressao = placeholder.cget("text").strip()
@@ -88,16 +105,9 @@ def clicar_operador(botao):
             n1 = valor_atual
             ultimo_numero = valor_atual
       
-        else:  
-            partes = expressao.split()
-            ultimo_operador_util = None
-
-            # Encontra o último operador com número à direita
-            for i in range(len(partes) - 1):
-                if partes[i] in operadores_validos and partes[i + 1] not in operadores_validos:
-                    ultimo_operador_util = partes[i]
-                print(ultimo_operador_util)
-
+        else: # Arrumar aqui
+            ultimo_operador_util = operador_util
+            print(ultimo_operador_util)  
             if ultimo_operador_util:
                 if not novo_numero:
                     n1 = operacoes[ultimo_operador_util](n1, valor_atual)
@@ -111,12 +121,14 @@ def clicar_operador(botao):
                     ultimo_numero = valor_atual
                 elif ultimo_numero is not None:
                     n1 = operacoes[operador](n1, ultimo_numero) 
+            
             entrada.delete(0, tk.END)
             entrada.insert(0, formatar_numero(n1))
 
         if expressao:
             operador = botao
             nova_expressao = (f"{expressao} {formatar_numero(valor_atual)} {operador}")
+            operador_util = penultimo_operador(nova_expressao)
             placeholder.config(text=nova_expressao)
             resultado_mostrado = False
             novo_numero = True
